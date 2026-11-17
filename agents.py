@@ -1,28 +1,35 @@
-from langchain.agents import create_agent
-from langchain_mistralai import ChatMistralAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from tools import scrape_url, web_search
+"""LLM setup: the search and reader agents, plus the writer and critic chains."""
+
 import os
+
 from dotenv import load_dotenv
+from langchain.agents import create_agent
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_mistralai import ChatMistralAI
+from tools import scrape_url, web_search
 
 load_dotenv()
 
-llm = ChatMistralAI(model="mistral-large-latest", temperature=0.2, max_tokens=700)
+llm = ChatMistralAI(
+    model=os.getenv("MISTRAL_MODEL", "mistral-large-latest"),
+    temperature=0.2,
+    max_tokens=700,
+)
 
 # First Agent
 def build_search_agent():
     return create_agent(
-        model = llm,
-        tools= [web_search],
+        model=llm,
+        tools=[web_search],
         system_prompt="Use the web_search tool once. Return only the 3 most relevant sources with title, URL, and a short snippet.",
     )
 
 # Second Agent
 def build_reader_agent():
     return create_agent(
-        model = llm,
-        tools= [scrape_url],
+        model=llm,
+        tools=[scrape_url],
         system_prompt="Use scrape_url once on the best URL. Return a concise factual summary and the source URL.",
     )
 

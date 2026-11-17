@@ -1,14 +1,15 @@
+"""Minimal local web UI for the research pipeline (standard library HTTP server)."""
+
 from __future__ import annotations
 
 import html
+import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs
 
-from pipeline import run_research_pipeline_low_call
-
-
-HOST = "127.0.0.1"
-PORT = 8000
+HOST = os.getenv("HOST", "127.0.0.1")
+PORT = int(os.getenv("PORT", "8000"))
+MAX_BODY_BYTES = 10_000
 
 
 def escape(value: object) -> str:
@@ -338,8 +339,14 @@ class ResearchHandler(BaseHTTPRequestHandler):
             self.send_error(404, "Not found")
             return
 
-        length = int(self.headers.get("Content-Length", "0"))
-        raw_body = self.rfile.read(length).decode("utf-8")
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            length = 0
+        if length > MAX_BODY_BYTES:
+            self.send_error(413, "Request too large")
+            return
+        raw_body = self.rfile.read(length).decode("utf-8", errors="replace")
         form = parse_qs(raw_body)
         topic = form.get("topic", [""])[0].strip()
         include_critic = form.get("skip_critic", ["0"])[0] != "1"
@@ -349,6 +356,8 @@ class ResearchHandler(BaseHTTPRequestHandler):
             return
 
         try:
+            from pipeline import run_research_pipeline_low_call  # imported lazily: needs API keys
+
             state = run_research_pipeline_low_call(topic, include_critic=include_critic)
         except Exception as e:
             self.send_html(render_page(topic=topic, error=f"Pipeline failed: {e}"))
