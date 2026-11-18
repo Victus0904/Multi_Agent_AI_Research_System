@@ -1,6 +1,23 @@
-# Multi_Agent_AI_Research_System
+# Multi-Agent AI Research System
+
+[![CI](https://github.com/Victus0904/Multi_Agent_AI_Research_System/actions/workflows/ci.yml/badge.svg)](https://github.com/Victus0904/Multi_Agent_AI_Research_System/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![LangChain](https://img.shields.io/badge/LangChain-1.x-1C3C3C)
+![Mistral](https://img.shields.io/badge/LLM-Mistral-FA520F)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 
 A lightweight research assistant that takes a topic, searches the web, scrapes source content, writes a structured report, and optionally critiques the result. The project supports both a command-line workflow and a local web interface with browser-based voice input.
+
+## How it works
+
+```mermaid
+flowchart LR
+    T[Topic] --> S[Search agent<br/>Tavily]
+    S --> R[Reader agent<br/>requests + BeautifulSoup]
+    R --> W[Writer chain<br/>Mistral]
+    W --> C[Critic chain<br/>Mistral]
+    C --> O[Report + score]
+```
 
 ## Features
 
@@ -18,6 +35,8 @@ A lightweight research assistant that takes a topic, searches the web, scrapes s
 |-- pipeline.py    # CLI pipeline, voice input, full agent pipeline, low-call pipeline
 |-- tools.py       # Tavily search and BeautifulSoup scraping tools/helpers
 |-- web_app.py     # Local browser interface
+|-- tests/         # Offline unit tests (no API keys needed)
+|-- .env.example
 |-- requirements.txt
 `-- README.md
 ```
@@ -36,11 +55,12 @@ pip install -r requirements.txt
 
 ## Environment Variables
 
-Create a `.env` file in the project root:
+Copy `.env.example` to `.env` and fill in your keys:
 
 ```env
 TAVILY_API_KEY=your_tavily_api_key
 MISTRAL_API_KEY=your_mistral_api_key
+# optional: MISTRAL_MODEL, HOST, PORT
 ```
 
 The `.env` file is ignored by git so API keys are not committed.
@@ -80,6 +100,15 @@ The project includes two execution paths:
 
 If you hit a Mistral `429 rate limit exceeded` error, wait for quota reset or keep critic generation disabled in the web interface.
 
+## Running the Tests
+
+```powershell
+pip install pytest
+pytest -q
+```
+
+The tests mock all network calls, so they run without API keys.
+
 ## Tech Stack
 
 - Python
@@ -91,6 +120,6 @@ If you hit a Mistral `429 rate limit exceeded` error, wait for quota reset or ke
 - Python `http.server`
 - Browser Web Speech API
 
-## GitHub
+## License
 
-Repository: [Multi_Agent_AI_Research_System](https://github.com/Victus0904/Multi_Agent_AI_Research_System)
+[Apache 2.0](LICENSE)

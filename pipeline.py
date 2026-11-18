@@ -1,7 +1,10 @@
-from agents import build_reader_agent, build_search_agent, writer_chain, critic_chain
-from tools import scrape_url_direct, search_web_direct
+"""Research pipeline: search -> scrape -> write -> critique, from the CLI or the web app."""
+
 import platform
 import subprocess
+
+from agents import build_reader_agent, build_search_agent, critic_chain, writer_chain
+from tools import scrape_url_direct, search_web_direct
 
 
 def limit_text(text: str, max_chars: int) -> str:
@@ -70,9 +73,9 @@ def run_research_pipeline(topic: str) -> dict:
     state = {}
 
     # Search agent working
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("Step 1 : Search agent is running")
-    print("="*50)
+    print("=" * 50)
 
     search_agent = build_search_agent()
     search_result = search_agent.invoke({
@@ -84,9 +87,9 @@ def run_research_pipeline(topic: str) -> dict:
 
     # Step 2 : Reader agent
 
-    print("\n"+" ="*50)
+    print("\n" + "=" * 50)
     print("step 2 - Reader agent is scraping top resources ...")
-    print("="*50)
+    print("=" * 50)
 
     reader_agent = build_reader_agent()
     reader_result = reader_agent.invoke({
@@ -102,9 +105,9 @@ def run_research_pipeline(topic: str) -> dict:
 
     #Step 3 - writer chain
 
-    print("\n"+" ="*50)
+    print("\n" + "=" * 50)
     print("step 3 - Writer is drafting the report ...")
-    print("="*50)
+    print("=" * 50)
 
     research_combined = (
         f"SEARCH RESULTS:\n{limit_text(state['search_results'], 900)}\n\n"
@@ -120,9 +123,9 @@ def run_research_pipeline(topic: str) -> dict:
 
     #critic report
 
-    print("\n"+" ="*50)
+    print("\n" + "=" * 50)
     print("Step 4 - critic is reviewing the report ")
-    print("="*50)
+    print("=" * 50)
 
     state["feedback"] = critic_chain.invoke({
         "report": limit_text(state['report'], 1800),
@@ -137,17 +140,17 @@ def run_research_pipeline(topic: str) -> dict:
 def run_research_pipeline_low_call(topic: str, include_critic: bool = True) -> dict:
     state = {}
 
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("Step 1 : Direct Tavily search is running")
-    print("="*50)
+    print("=" * 50)
 
     search_results, urls = search_web_direct(topic, max_results=3)
     state["search_results"] = limit_text(search_results, 900)
     print("\n search result ", state["search_results"])
 
-    print("\n"+" ="*50)
+    print("\n" + "=" * 50)
     print("step 2 - Direct scraper is reading the top source ...")
-    print("="*50)
+    print("=" * 50)
 
     if urls:
         scraped_content = scrape_url_direct(urls[0], max_chars=600)
@@ -157,9 +160,9 @@ def run_research_pipeline_low_call(topic: str, include_critic: bool = True) -> d
     state["scraped_content"] = limit_text(scraped_content, 700)
     print("\nscraped content: \n", state["scraped_content"])
 
-    print("\n"+" ="*50)
+    print("\n" + "=" * 50)
     print("step 3 - Writer is drafting a concise report ...")
-    print("="*50)
+    print("=" * 50)
 
     research_combined = (
         f"SEARCH RESULTS:\n{limit_text(state['search_results'], 700)}\n\n"
@@ -174,9 +177,9 @@ def run_research_pipeline_low_call(topic: str, include_critic: bool = True) -> d
     print("\n Final Report\n", state["report"])
 
     if include_critic:
-        print("\n"+" ="*50)
+        print("\n" + "=" * 50)
         print("Step 4 - critic is reviewing the report ")
-        print("="*50)
+        print("=" * 50)
 
         state["feedback"] = critic_chain.invoke({
             "report": limit_text(state["report"], 1200),
@@ -190,6 +193,9 @@ def run_research_pipeline_low_call(topic: str, include_critic: bool = True) -> d
     return state
 
 
-if"__main__" == __name__:
+if __name__ == "__main__":
     topic = get_research_topic()
-    run_research_pipeline(topic)
+    if topic:
+        run_research_pipeline(topic)
+    else:
+        print("No topic given, exiting.")
